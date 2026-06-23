@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers | Majestic Hotels</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside>
+            <div class="nav-logo">MAJESTIC</div>
+            <nav>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="rooms.html">Rooms</a></li>
+                    <li><a href="bookings.html">Bookings</a></li>
+                    <li><a href="customers.html" class="active">Customers</a></li>
+                    <li><a href="hotel.html">Hotel Settings</a></li>
+                    <li style="margin-top: 2rem;"><a href="#" onclick="logout()"
+                            style="color: var(--danger);">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <main>
+            <header>
+                <div>
+                    <h2 style="font-size: 1.5rem;">Customer Registry</h2>
+                    <p style="color: var(--text-muted);">View guest information</p>
+                </div>
+                <button class="btn btn-primary" style="width: auto; padding: 0.5rem 1.5rem;" onclick="openModal()">+ Add
+                    Customer</button>
+            </header>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>ID Proof</th>
+                    </tr>
+                </thead>
+                <tbody id="customerList">
+                    <!-- Data -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="custModal" class="modal">
+        <div class="modal-content">
+            <h3>Add Customer</h3>
+            <form id="custForm" style="margin-top: 1.5rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" id="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" id="lastName" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="phone" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>ID Type</label>
+                        <select id="idProofType">
+                            <option value="Passport">Passport</option>
+                            <option value="Driver License">Driver License</option>
+                            <option value="National ID">National ID</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>ID Number</label>
+                        <input type="text" id="idProofNumber" required>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn" style="background: var(--glass);"
+                        onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Guest</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8089/api/customers';
+        document.addEventListener('DOMContentLoaded', loadCustomers);
+
+        async function loadCustomers() {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            document.getElementById('customerList').innerHTML = data.map(c => `
+                <tr>
+                    <td>${c.firstName} ${c.lastName}</td>
+                    <td>${c.email}</td>
+                    <td>${c.phone}</td>
+                    <td>${c.idProofType}: ${c.idProofNumber}</td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('custForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const customer = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                idProofType: document.getElementById('idProofType').value,
+                idProofNumber: document.getElementById('idProofNumber').value,
+            };
+
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(customer)
+            });
+            closeModal();
+            loadCustomers();
+        });
+
+        function openModal() { document.getElementById('custModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('custModal').style.display = 'none'; }
+        function logout() { localStorage.removeItem('user'); window.location.href = '../index.html'; }
+    </script>
+</body>
+
+</html>

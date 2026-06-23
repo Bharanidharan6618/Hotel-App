@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rooms | Majestic Hotels</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside>
+            <div class="nav-logo">MAJESTIC</div>
+            <nav>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="rooms.html" class="active">Rooms</a></li>
+                    <li><a href="bookings.html">Bookings</a></li>
+                    <li><a href="customers.html">Customers</a></li>
+                    <li><a href="hotel.html">Hotel Settings</a></li>
+                    <li style="margin-top: 2rem;"><a href="#" onclick="logout()"
+                            style="color: var(--danger);">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <main>
+            <header>
+                <div>
+                    <h2 style="font-size: 1.5rem;">Room Management</h2>
+                    <p style="color: var(--text-muted);">View and manage hotel rooms</p>
+                </div>
+                <button class="btn btn-primary" style="width: auto; padding: 0.5rem 1.5rem;" onclick="openModal()">+ Add
+                    New Room</button>
+            </header>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Room No</th>
+                        <th>Type</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="roomList">
+                    <!-- Data injected by JS -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <!-- Add Room Modal -->
+    <div id="roomModal" class="modal">
+        <div class="modal-content">
+            <h3>Add New Room</h3>
+            <form id="roomForm" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label>Room Number</label>
+                    <input type="text" id="roomNumber" placeholder="e.g. 101" required>
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="roomType">
+                        <option value="Single">Single</option>
+                        <option value="Double">Double</option>
+                        <option value="Suite">Suite</option>
+                        <option value="Deluxe">Deluxe</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Price per Night ($)</label>
+                    <input type="number" id="roomPrice" placeholder="100" required>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="roomStatus">
+                        <option value="Available">Available</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn" style="background: var(--glass);"
+                        onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Room</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8089/api/rooms';
+
+        document.addEventListener('DOMContentLoaded', loadRooms);
+
+        async function loadRooms() {
+            try {
+                const response = await fetch(API_URL);
+                const rooms = await response.json();
+                const list = document.getElementById('roomList');
+                list.innerHTML = rooms.map(r => `
+                    <tr>
+                        <td>${r.roomNumber}</td>
+                        <td>${r.type}</td>
+                        <td>$${r.price}</td>
+                        <td><span class="badge ${r.status === 'Available' ? 'badge-success' : 'badge-warning'}">${r.status}</span></td>
+                        <td>
+                            <button onclick="deleteRoom(${r.id})" style="background:none; border:none; color:var(--danger); cursor:pointer;">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        document.getElementById('roomForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const room = {
+                roomNumber: document.getElementById('roomNumber').value,
+                type: document.getElementById('roomType').value,
+                price: document.getElementById('roomPrice').value,
+                status: document.getElementById('roomStatus').value
+            };
+
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(room)
+            });
+            closeModal();
+            loadRooms();
+        });
+
+        async function deleteRoom(id) {
+            if (confirm('Are you sure?')) {
+                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                loadRooms();
+            }
+        }
+
+        function openModal() { document.getElementById('roomModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('roomModal').style.display = 'none'; }
+        function logout() { localStorage.removeItem('user'); window.location.href = '../index.html'; }
+    </script>
+</body>
+
+</html>

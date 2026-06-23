@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookings | Majestic Hotels</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside>
+            <div class="nav-logo">MAJESTIC</div>
+            <nav>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="rooms.html">Rooms</a></li>
+                    <li><a href="bookings.html" class="active">Bookings</a></li>
+                    <li><a href="customers.html">Customers</a></li>
+                    <li><a href="hotel.html">Hotel Settings</a></li>
+                    <li style="margin-top: 2rem;"><a href="#" onclick="logout()"
+                            style="color: var(--danger);">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <main>
+            <header>
+                <div>
+                    <h2 style="font-size: 1.5rem;">Booking Management</h2>
+                    <p style="color: var(--text-muted);">Manage guest reservations</p>
+                </div>
+                <button class="btn btn-primary" style="width: auto; padding: 0.5rem 1.5rem;" onclick="openModal()">+ New
+                    Booking</button>
+            </header>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Customer</th>
+                        <th>Room</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingList">
+                    <!-- Data Injected -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <!-- Add Booking Modal -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <h3>New Reservation</h3>
+            <form id="bookingForm" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label>Select Customer</label>
+                    <select id="customerId" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Select Room</label>
+                    <select id="roomId" required></select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Check-In</label>
+                        <input type="date" id="checkInDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Check-Out</label>
+                        <input type="date" id="checkOutDate" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Total Amount ($)</label>
+                    <input type="number" id="totalAmount" placeholder="350" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn" style="background: var(--glass);"
+                        onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Book Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8089/api';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBookings();
+            loadDropdowns();
+        });
+
+        async function loadBookings() {
+            const res = await fetch(`${API_BASE}/bookings`);
+            const data = await res.json();
+            document.getElementById('bookingList').innerHTML = data.map(b => `
+                <tr>
+                    <td>#${b.id}</td>
+                    <td>${b.customer ? b.customer.firstName + ' ' + b.customer.lastName : 'Unknown'}</td>
+                    <td>${b.room ? b.room.roomNumber : 'N/A'}</td>
+                    <td>${b.checkInDate}</td>
+                    <td>${b.checkOutDate}</td>
+                    <td><span class="badge badge-success">${b.status || 'Confirmed'}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadDropdowns() {
+            const [custRes, roomRes] = await Promise.all([
+                fetch(`${API_BASE}/customers`),
+                fetch(`${API_BASE}/rooms`)
+            ]);
+            const customers = await custRes.json();
+            const rooms = await roomRes.json();
+
+            document.getElementById('customerId').innerHTML = customers.map(c => `<option value="${c.id}">${c.firstName} ${c.lastName}</option>`).join('');
+            document.getElementById('roomId').innerHTML = rooms.filter(r => r.status === 'Available').map(r => `<option value="${r.id}">${r.roomNumber} (${r.type})</option>`).join('');
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const booking = {
+                customer: { id: document.getElementById('customerId').value },
+                room: { id: document.getElementById('roomId').value },
+                checkInDate: document.getElementById('checkInDate').value,
+                checkOutDate: document.getElementById('checkOutDate').value,
+                totalAmount: document.getElementById('totalAmount').value,
+                status: 'Confirmed'
+            };
+
+            await fetch(`${API_BASE}/bookings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(booking)
+            });
+            closeModal();
+            loadBookings();
+        });
+
+        function openModal() { document.getElementById('bookingModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('bookingModal').style.display = 'none'; }
+        function logout() { localStorage.removeItem('user'); window.location.href = '../index.html'; }
+    </script>
+</body>
+
+</html>

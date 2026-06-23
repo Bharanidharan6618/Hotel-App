@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Majestic Hotels</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside>
+            <div class="nav-logo">MAJESTIC</div>
+            <nav>
+                <ul>
+                    <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                    <li><a href="rooms.html">Rooms</a></li>
+                    <li><a href="bookings.html">Bookings</a></li>
+                    <li><a href="customers.html">Customers</a></li>
+                    <li><a href="hotel.html">Hotel Settings</a></li>
+                    <li style="margin-top: 2rem;"><a href="#" onclick="logout()"
+                            style="color: var(--danger);">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <main>
+            <header>
+                <div>
+                    <h2 style="font-size: 1.5rem;">Dashboard Overview</h2>
+                    <p style="color: var(--text-muted);">Welcome back, <span id="userNameDisplay">Admin</span></p>
+                </div>
+                <div class="user-profile">
+                    <div
+                        style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                        A</div>
+                </div>
+            </header>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Rooms</h3>
+                    <div class="value" id="totalRooms">24</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Bookings</h3>
+                    <div class="value" id="activeBookings">12</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Customers</h3>
+                    <div class="value" id="totalCustomers">158</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Revenue</h3>
+                    <div class="value" id="revenue">$12,450</div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.125rem;">Recent Bookings</h3>
+                <button class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;"
+                    onclick="location.href='bookings.html'">View All</button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Room</th>
+                        <th>Check-In</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="recentBookingsList">
+                    <!-- Data injected by JS -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                window.location.href = '../index.html';
+                return;
+            }
+            document.getElementById('userNameDisplay').textContent = user.fullName;
+
+            // Mock data or fetch from API
+            loadDashboardData();
+        });
+
+        async function loadDashboardData() {
+            try {
+                // In a real app, you'd fetch stats from backend
+                const response = await fetch('http://localhost:8089/api/bookings');
+                if (response.ok) {
+                    const bookings = await response.json();
+                    renderRecentBookings(bookings.slice(-5).reverse());
+                }
+            } catch (err) {
+                console.error('Failed to load dashboard data');
+            }
+        }
+
+        function renderRecentBookings(bookings) {
+            const list = document.getElementById('recentBookingsList');
+            if (bookings.length === 0) {
+                list.innerHTML = '<tr><td colspan="5" style="text-align: center;">No bookings found</td></tr>';
+                return;
+            }
+            list.innerHTML = bookings.map(b => `
+                <tr>
+                    <td>${b.customer ? b.customer.firstName + ' ' + b.customer.lastName : 'N/A'}</td>
+                    <td>${b.room ? b.room.roomNumber : 'N/A'}</td>
+                    <td>${b.checkInDate}</td>
+                    <td><span class="badge ${b.status === 'Confirmed' ? 'badge-success' : 'badge-warning'}">${b.status}</span></td>
+                    <td>$${b.totalAmount}</td>
+                </tr>
+            `).join('');
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = '../index.html';
+        }
+    </script>
+</body>
+
+</html>
